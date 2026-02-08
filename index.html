@@ -8,11 +8,24 @@
   </head>
   <body>
     <main class="app">
-      <h1>Snake</h1>
-      <p class="meta">
-        Score: <span id="score">0</span>
-        <span id="status">Running</span>
-      </p>
+      <header class="top">
+        <div>
+          <h1>Snake</h1>
+          <p class="subtitle">Classic arcade mode</p>
+        </div>
+        <span class="status" id="status">Running</span>
+      </header>
+
+      <section class="stats">
+        <article class="stat-card">
+          <p class="label">Score</p>
+          <p class="value" id="score">0</p>
+        </article>
+        <article class="stat-card">
+          <p class="label">Best</p>
+          <p class="value" id="best-score">0</p>
+        </article>
+      </section>
 
       <canvas
         id="game"
@@ -35,7 +48,7 @@
         </div>
       </section>
 
-      <p class="help">Use arrow keys or WASD. Space toggles pause.</p>
+      <p class="help">Use arrow keys or WASD. Press Space to pause/resume.</p>
     </main>
     <script type="module" src="./src/main.js"></script>
   </body>

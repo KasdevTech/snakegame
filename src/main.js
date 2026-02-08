@@ -9,6 +9,7 @@ import {
 const canvas = document.getElementById("game");
 const context = canvas.getContext("2d");
 const scoreEl = document.getElementById("score");
+const bestScoreEl = document.getElementById("best-score");
 const statusEl = document.getElementById("status");
 const pauseButton = document.getElementById("pause");
 const restartButton = document.getElementById("restart");
@@ -18,9 +19,30 @@ const CELL_SIZE = 20;
 const TICK_MS = 120;
 
 let state = createInitialState({ width: 20, height: 20 });
+let bestScore = Number(window.localStorage.getItem("snake-best-score") || 0);
+
+function roundedRect(x, y, width, height, radius) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+}
 
 function drawGrid(width, height) {
-  context.strokeStyle = "#d9d9d9";
+  const boardGradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+  boardGradient.addColorStop(0, "#f8fbff");
+  boardGradient.addColorStop(1, "#eef8f2");
+  context.fillStyle = boardGradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.strokeStyle = "#dfe6ec";
   context.lineWidth = 1;
   for (let x = 0; x <= width; x += 1) {
     context.beginPath();
@@ -41,36 +63,59 @@ function drawState() {
   drawGrid(state.width, state.height);
 
   if (state.food) {
-    context.fillStyle = "#c20d0d";
-    context.fillRect(
-      state.food.x * CELL_SIZE + 2,
-      state.food.y * CELL_SIZE + 2,
-      CELL_SIZE - 4,
-      CELL_SIZE - 4
+    const pulse = 0.8 + Math.sin(Date.now() / 180) * 0.2;
+    const inset = 3 - pulse;
+    context.fillStyle = "#e04242";
+    roundedRect(
+      state.food.x * CELL_SIZE + inset,
+      state.food.y * CELL_SIZE + inset,
+      CELL_SIZE - inset * 2,
+      CELL_SIZE - inset * 2,
+      6
     );
+    context.fill();
   }
 
-  context.fillStyle = "#1f1f1f";
   state.snake.forEach((segment, index) => {
-    context.fillRect(
-      segment.x * CELL_SIZE + (index === 0 ? 1 : 2),
-      segment.y * CELL_SIZE + (index === 0 ? 1 : 2),
-      CELL_SIZE - (index === 0 ? 2 : 4),
-      CELL_SIZE - (index === 0 ? 2 : 4)
+    const isHead = index === 0;
+    const inset = isHead ? 1 : 2;
+    const size = isHead ? CELL_SIZE - 2 : CELL_SIZE - 4;
+    const gradient = context.createLinearGradient(
+      segment.x * CELL_SIZE,
+      segment.y * CELL_SIZE,
+      segment.x * CELL_SIZE + CELL_SIZE,
+      segment.y * CELL_SIZE + CELL_SIZE
     );
+    gradient.addColorStop(0, isHead ? "#0f704f" : "#159167");
+    gradient.addColorStop(1, isHead ? "#14a573" : "#0f7f59");
+    context.fillStyle = gradient;
+    roundedRect(segment.x * CELL_SIZE + inset, segment.y * CELL_SIZE + inset, size, size, 5);
+    context.fill();
   });
 
   scoreEl.textContent = String(state.score);
+  bestScore = Math.max(bestScore, state.score);
+  bestScoreEl.textContent = String(bestScore);
+  window.localStorage.setItem("snake-best-score", String(bestScore));
   if (state.gameOver) {
     statusEl.textContent = "Game over";
+    statusEl.style.background = "#ffefef";
+    statusEl.style.borderColor = "#ffd5d5";
+    statusEl.style.color = "#a32f2f";
     pauseButton.disabled = true;
     pauseButton.textContent = "Pause";
   } else if (state.paused) {
     statusEl.textContent = "Paused";
+    statusEl.style.background = "#fff8e5";
+    statusEl.style.borderColor = "#ffebbc";
+    statusEl.style.color = "#8d6700";
     pauseButton.disabled = false;
     pauseButton.textContent = "Resume";
   } else {
     statusEl.textContent = "Running";
+    statusEl.style.background = "#ebfaf3";
+    statusEl.style.borderColor = "#c8e6da";
+    statusEl.style.color = "#0a6d4a";
     pauseButton.disabled = false;
     pauseButton.textContent = "Pause";
   }
