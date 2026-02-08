@@ -9,7 +9,32 @@
   <body>
     <main class="app">
       <header class="top">
-        <div>
+        <div class="title-wrap">
+          <span class="snake-symbol" aria-hidden="true">
+            <svg viewBox="0 0 64 64" role="img">
+              <defs>
+                <linearGradient id="snake-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#7fffcf"></stop>
+                  <stop offset="100%" stop-color="#2dc58e"></stop>
+                </linearGradient>
+              </defs>
+              <path
+                d="M10 38c0-10 9-18 20-18h6c8 0 14 5 14 12s-5 12-11 12h-7c-4 0-7 3-7 6s3 6 7 6h13"
+                fill="none"
+                stroke="url(#snake-grad)"
+                stroke-width="6"
+                stroke-linecap="round"
+              ></path>
+              <circle cx="48" cy="31" r="7" fill="#46dba6"></circle>
+              <circle cx="50" cy="29" r="1.4" fill="#0e271e"></circle>
+              <path
+                d="M54 34l5 1m-5-1l4 4"
+                stroke="#ff6f7a"
+                stroke-width="2"
+                stroke-linecap="round"
+              ></path>
+            </svg>
+          </span>
           <h1>Snake</h1>
           <p class="subtitle">Classic arcade mode</p>
         </div>
@@ -27,12 +52,14 @@
         </article>
       </section>
 
-      <canvas
-        id="game"
-        width="400"
-        height="400"
-        aria-label="Snake game board"
-      ></canvas>
+      <div class="board-shell">
+        <canvas
+          id="game"
+          width="400"
+          height="400"
+          aria-label="Snake game board"
+        ></canvas>
+      </div>
 
       <section class="controls">
         <button id="pause">Pause</button>
@@ -48,7 +75,10 @@
         </div>
       </section>
 
-      <p class="help">Use arrow keys or WASD. Press Space to pause/resume.</p>
+      <p class="help">
+        <span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span>
+        or arrows to steer. <span class="keycap">Space</span> pauses.
+      </p>
     </main>
     <script type="module" src="./src/main.js"></script>
   </body>
