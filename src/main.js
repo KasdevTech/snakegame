@@ -10,16 +10,18 @@ const canvas = document.getElementById("game");
 const context = canvas.getContext("2d");
 const scoreEl = document.getElementById("score");
 const bestScoreEl = document.getElementById("best-score");
+const stageEl = document.getElementById("stage");
+const speedLayerEl = document.getElementById("speed-layer");
 const statusEl = document.getElementById("status");
 const pauseButton = document.getElementById("pause");
 const restartButton = document.getElementById("restart");
 const touchControls = document.querySelector(".touch-controls");
 
 const CELL_SIZE = 20;
-const TICK_MS = 120;
 
 let state = createInitialState({ width: 20, height: 20 });
 let bestScore = Number(window.localStorage.getItem("snake-best-score") || 0);
+let tickTimeoutId = null;
 
 function roundedRect(x, y, width, height, radius) {
   context.beginPath();
@@ -171,6 +173,8 @@ function drawState() {
   scoreEl.textContent = String(state.score);
   bestScore = Math.max(bestScore, state.score);
   bestScoreEl.textContent = String(bestScore);
+  stageEl.textContent = String(state.stage);
+  speedLayerEl.textContent = `${state.speedMultiplier.toFixed(2)}x`;
   window.localStorage.setItem("snake-best-score", String(bestScore));
   if (state.gameOver) {
     statusEl.textContent = "Game over";
@@ -211,9 +215,15 @@ function drawState() {
 function step() {
   state = tick(state);
   drawState();
+  scheduleNextTick();
 }
 
-const intervalId = window.setInterval(step, TICK_MS);
+function scheduleNextTick() {
+  if (tickTimeoutId !== null) {
+    window.clearTimeout(tickTimeoutId);
+  }
+  tickTimeoutId = window.setTimeout(step, state.tickMs);
+}
 
 function applyDirectionInput(rawValue) {
   const map = {
@@ -271,7 +281,10 @@ touchControls.addEventListener("click", (event) => {
 });
 
 window.addEventListener("beforeunload", () => {
-  window.clearInterval(intervalId);
+  if (tickTimeoutId !== null) {
+    window.clearTimeout(tickTimeoutId);
+  }
 });
 
 drawState();
+scheduleNextTick();

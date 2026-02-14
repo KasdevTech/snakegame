@@ -5,6 +5,11 @@ export const DIRECTIONS = {
   right: { x: 1, y: 0 },
 };
 
+export const BASE_TICK_MS = 140;
+export const MIN_TICK_MS = 70;
+export const SPEED_STEP_MS = 10;
+export const FOOD_PER_STAGE = 5;
+
 function samePoint(a, b) {
   return a.x === b.x && a.y === b.y;
 }
@@ -36,6 +41,13 @@ function randomFreeCell(width, height, occupied, rng) {
   return freeCells[index];
 }
 
+function calculateProgress(score) {
+  const stage = Math.floor(score / FOOD_PER_STAGE) + 1;
+  const tickMs = Math.max(MIN_TICK_MS, BASE_TICK_MS - (stage - 1) * SPEED_STEP_MS);
+  const speedMultiplier = Number((BASE_TICK_MS / tickMs).toFixed(2));
+  return { stage, tickMs, speedMultiplier };
+}
+
 export function createInitialState(config = {}, rng = Math.random) {
   const width = config.width ?? 20;
   const height = config.height ?? 20;
@@ -47,6 +59,8 @@ export function createInitialState(config = {}, rng = Math.random) {
   const direction = config.direction ?? DIRECTIONS.right;
   const occupied = new Set(snake.map((segment) => `${segment.x},${segment.y}`));
   const food = config.food ?? randomFreeCell(width, height, occupied, rng);
+  const score = config.score ?? 0;
+  const progress = calculateProgress(score);
 
   return {
     width,
@@ -55,7 +69,10 @@ export function createInitialState(config = {}, rng = Math.random) {
     direction,
     queuedDirection: direction,
     food,
-    score: 0,
+    score,
+    stage: progress.stage,
+    tickMs: progress.tickMs,
+    speedMultiplier: progress.speedMultiplier,
     gameOver: false,
     paused: false,
   };
@@ -131,6 +148,8 @@ export function tick(state, rng = Math.random) {
   const food = willGrow
     ? randomFreeCell(state.width, state.height, occupied, rng)
     : state.food;
+  const nextScore = willGrow ? state.score + 1 : state.score;
+  const progress = calculateProgress(nextScore);
 
   return {
     ...state,
@@ -138,6 +157,9 @@ export function tick(state, rng = Math.random) {
     direction,
     queuedDirection: direction,
     food,
-    score: willGrow ? state.score + 1 : state.score,
+    score: nextScore,
+    stage: progress.stage,
+    tickMs: progress.tickMs,
+    speedMultiplier: progress.speedMultiplier,
   };
 }

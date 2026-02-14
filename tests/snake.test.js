@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import {
+  BASE_TICK_MS,
   DIRECTIONS,
+  FOOD_PER_STAGE,
+  MIN_TICK_MS,
   createInitialState,
   queueDirection,
   restartGame,
@@ -38,6 +41,8 @@ test("moves one cell in current direction", () => {
   const next = tick(state);
   assert.deepEqual(next.snake, [{ x: 3, y: 2 }, { x: 2, y: 2 }, { x: 1, y: 2 }]);
   assert.equal(next.score, 0);
+  assert.equal(next.stage, 1);
+  assert.equal(next.tickMs, BASE_TICK_MS);
 });
 
 test("grows and increments score when food is eaten", () => {
@@ -122,4 +127,32 @@ test("restart resets score and game state", () => {
   assert.equal(restarted.gameOver, false);
   assert.equal(restarted.paused, false);
   assert.deepEqual(restarted.direction, DIRECTIONS.right);
+  assert.equal(restarted.stage, 1);
+  assert.equal(restarted.tickMs, BASE_TICK_MS);
+});
+
+test("advances stage and increases speed every score threshold", () => {
+  const scoreAtNextStage = FOOD_PER_STAGE - 1;
+  const state = createInitialState({
+    width: 8,
+    height: 8,
+    snake: [{ x: 2, y: 2 }, { x: 1, y: 2 }, { x: 0, y: 2 }],
+    direction: DIRECTIONS.right,
+    food: { x: 3, y: 2 },
+    score: scoreAtNextStage,
+  });
+  const next = tick(state, fakeRng([0]));
+  assert.equal(next.score, FOOD_PER_STAGE);
+  assert.equal(next.stage, 2);
+  assert.ok(next.tickMs < state.tickMs);
+  assert.ok(next.speedMultiplier > state.speedMultiplier);
+});
+
+test("caps speed at minimum tick interval", () => {
+  const state = createInitialState({
+    width: 8,
+    height: 8,
+    score: FOOD_PER_STAGE * 20,
+  });
+  assert.equal(state.tickMs, MIN_TICK_MS);
 });
