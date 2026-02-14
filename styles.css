@@ -164,8 +164,26 @@ h1 {
 
 .controls {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin-top: 12px;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.speed-control select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(140, 180, 212, 0.5);
+  background: linear-gradient(180deg, #213b5a, #162e45);
+  color: #e8f6ff;
 }
 
 button {

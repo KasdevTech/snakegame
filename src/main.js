@@ -2,6 +2,7 @@ import {
   createInitialState,
   queueDirection,
   restartGame,
+  setSpeedLayer,
   tick,
   togglePause,
 } from "./snake.js";
@@ -15,6 +16,7 @@ const speedLayerEl = document.getElementById("speed-layer");
 const statusEl = document.getElementById("status");
 const pauseButton = document.getElementById("pause");
 const restartButton = document.getElementById("restart");
+const speedLayerSelect = document.getElementById("speed-layer-select");
 const touchControls = document.querySelector(".touch-controls");
 
 const CELL_SIZE = 20;
@@ -175,6 +177,7 @@ function drawState() {
   bestScoreEl.textContent = String(bestScore);
   stageEl.textContent = String(state.stage);
   speedLayerEl.textContent = `${state.speedMultiplier.toFixed(2)}x`;
+  speedLayerSelect.value = String(state.speedLayer);
   window.localStorage.setItem("snake-best-score", String(bestScore));
   if (state.gameOver) {
     statusEl.textContent = "Game over";
@@ -270,6 +273,13 @@ pauseButton.addEventListener("click", () => {
 restartButton.addEventListener("click", () => {
   state = restartGame(state);
   drawState();
+  scheduleNextTick();
+});
+
+speedLayerSelect.addEventListener("change", () => {
+  state = setSpeedLayer(state, speedLayerSelect.value);
+  drawState();
+  scheduleNextTick();
 });
 
 touchControls.addEventListener("click", (event) => {

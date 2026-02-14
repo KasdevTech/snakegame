@@ -7,6 +7,7 @@ import {
   createInitialState,
   queueDirection,
   restartGame,
+  setSpeedLayer,
   tick,
   togglePause,
 } from "../src/snake.js";
@@ -59,13 +60,27 @@ test("grows and increments score when food is eaten", () => {
   assert.notDeepEqual(next.food, { x: 3, y: 2 });
 });
 
-test("game over on wall collision", () => {
+test("stage 1 wraps through walls", () => {
   const state = createInitialState({
     width: 4,
     height: 4,
     snake: [{ x: 3, y: 1 }, { x: 2, y: 1 }, { x: 1, y: 1 }],
     direction: DIRECTIONS.right,
     food: { x: 0, y: 0 },
+  });
+  const next = tick(state);
+  assert.equal(next.gameOver, false);
+  assert.deepEqual(next.snake[0], { x: 0, y: 1 });
+});
+
+test("stage 2 collides with walls", () => {
+  const state = createInitialState({
+    width: 4,
+    height: 4,
+    snake: [{ x: 3, y: 1 }, { x: 2, y: 1 }, { x: 1, y: 1 }],
+    direction: DIRECTIONS.right,
+    food: { x: 0, y: 0 },
+    score: FOOD_PER_STAGE,
   });
   const next = tick(state);
   assert.equal(next.gameOver, true);
@@ -155,4 +170,11 @@ test("caps speed at minimum tick interval", () => {
     score: FOOD_PER_STAGE * 20,
   });
   assert.equal(state.tickMs, MIN_TICK_MS);
+});
+
+test("speed layer selection changes tick speed", () => {
+  const state = createInitialState({ width: 8, height: 8 });
+  const faster = setSpeedLayer(state, 2);
+  assert.equal(faster.speedLayer, 2);
+  assert.ok(faster.tickMs < state.tickMs);
 });

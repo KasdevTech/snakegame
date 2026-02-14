@@ -9,6 +9,7 @@ export const BASE_TICK_MS = 140;
 export const MIN_TICK_MS = 70;
 export const SPEED_STEP_MS = 10;
 export const FOOD_PER_STAGE = 5;
+export const SPEED_LAYERS = [1, 1.25, 1.5, 1.75, 2];
 
 function samePoint(a, b) {
   return a.x === b.x && a.y === b.y;
@@ -41,9 +42,15 @@ function randomFreeCell(width, height, occupied, rng) {
   return freeCells[index];
 }
 
-function calculateProgress(score) {
+function normalizeSpeedLayer(value) {
+  const numeric = Number(value);
+  return SPEED_LAYERS.includes(numeric) ? numeric : SPEED_LAYERS[0];
+}
+
+function calculateProgress(score, speedLayer) {
   const stage = Math.floor(score / FOOD_PER_STAGE) + 1;
-  const tickMs = Math.max(MIN_TICK_MS, BASE_TICK_MS - (stage - 1) * SPEED_STEP_MS);
+  const stageTickMs = Math.max(MIN_TICK_MS, BASE_TICK_MS - (stage - 1) * SPEED_STEP_MS);
+  const tickMs = Math.max(MIN_TICK_MS, Math.round(stageTickMs / speedLayer));
   const speedMultiplier = Number((BASE_TICK_MS / tickMs).toFixed(2));
   return { stage, tickMs, speedMultiplier };
 }
@@ -57,10 +64,11 @@ export function createInitialState(config = {}, rng = Math.random) {
     { x: 1, y: 10 },
   ];
   const direction = config.direction ?? DIRECTIONS.right;
+  const speedLayer = normalizeSpeedLayer(config.speedLayer);
   const occupied = new Set(snake.map((segment) => `${segment.x},${segment.y}`));
   const food = config.food ?? randomFreeCell(width, height, occupied, rng);
   const score = config.score ?? 0;
-  const progress = calculateProgress(score);
+  const progress = calculateProgress(score, speedLayer);
 
   return {
     width,
@@ -70,6 +78,7 @@ export function createInitialState(config = {}, rng = Math.random) {
     queuedDirection: direction,
     food,
     score,
+    speedLayer,
     stage: progress.stage,
     tickMs: progress.tickMs,
     speedMultiplier: progress.speedMultiplier,
@@ -105,8 +114,23 @@ export function togglePause(state) {
   };
 }
 
+export function setSpeedLayer(state, speedLayer) {
+  const normalized = normalizeSpeedLayer(speedLayer);
+  const progress = calculateProgress(state.score, normalized);
+  return {
+    ...state,
+    speedLayer: normalized,
+    stage: progress.stage,
+    tickMs: progress.tickMs,
+    speedMultiplier: progress.speedMultiplier,
+  };
+}
+
 export function restartGame(state, rng = Math.random) {
-  return createInitialState({ width: state.width, height: state.height }, rng);
+  return createInitialState(
+    { width: state.width, height: state.height, speedLayer: state.speedLayer },
+    rng
+  );
 }
 
 export function tick(state, rng = Math.random) {
@@ -119,12 +143,17 @@ export function tick(state, rng = Math.random) {
     : state.queuedDirection;
 
   const currentHead = state.snake[0];
-  const nextHead = {
+  let nextHead = {
     x: currentHead.x + direction.x,
     y: currentHead.y + direction.y,
   };
 
-  if (isOutOfBounds(nextHead, state.width, state.height)) {
+  if (state.stage === 1 && isOutOfBounds(nextHead, state.width, state.height)) {
+    nextHead = {
+      x: (nextHead.x + state.width) % state.width,
+      y: (nextHead.y + state.height) % state.height,
+    };
+  } else if (isOutOfBounds(nextHead, state.width, state.height)) {
     return {
       ...state,
       direction,
@@ -149,7 +178,7 @@ export function tick(state, rng = Math.random) {
     ? randomFreeCell(state.width, state.height, occupied, rng)
     : state.food;
   const nextScore = willGrow ? state.score + 1 : state.score;
-  const progress = calculateProgress(nextScore);
+  const progress = calculateProgress(nextScore, state.speedLayer);
 
   return {
     ...state,
